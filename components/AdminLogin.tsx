@@ -21,7 +21,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onClose, onLoginSuccess,
     setLoading(true);
 
     // Si el usuario es "admin", lo traducimos al email requerido por Supabase.
-    const loginIdentifier = username.toLowerCase() === 'admin' ? 'admin@kicks.com' : username;
+    const loginIdentifier = username.toLowerCase() === 'admin' ? 'admin@monsterstore.com' : username;
 
     const { error: loginError } = await login(loginIdentifier, password);
     setLoading(false);

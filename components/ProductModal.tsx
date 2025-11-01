@@ -9,6 +9,7 @@ interface ProductModalProps {
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const hasImages = product.images && product.images.length > 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-UY', { style: 'currency', currency: 'UYU' }).format(price);
@@ -19,16 +20,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!hasImages) return;
     setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
   };
 
   const prevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!hasImages) return;
     setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
   };
   
   const selectImage = (e: React.MouseEvent, index: number) => {
     e.stopPropagation();
+    if (!hasImages) return;
     setCurrentImageIndex(index);
   }
 
@@ -49,8 +53,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
         >
           <div className="w-full md:w-1/2 relative">
             <div className="relative aspect-square">
-              <img src={product.images[currentImageIndex]} alt={product.name} className="w-full h-full object-cover rounded-lg"/>
-              {product.images.length > 1 && (
+              {hasImages ? (
+                <img src={product.images[currentImageIndex]} alt={product.name} className="w-full h-full object-cover rounded-lg"/>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-700 rounded-lg">
+                    <svg className="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+              )}
+              {hasImages && product.images.length > 1 && (
                 <>
                   <button onClick={prevImage} className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/20 p-2 rounded-full hover:bg-white/40 transition-colors z-20">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -61,13 +71,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 </>
               )}
             </div>
-            <div className="mt-4 flex justify-center space-x-2">
+            {hasImages && (
+              <div className="mt-4 flex justify-center space-x-2">
                   {product.images.map((img, index) => (
                       <button key={index} onClick={(e) => selectImage(e, index)} className={`w-16 h-16 rounded-md overflow-hidden border-2 transition-colors ${index === currentImageIndex ? 'border-teal-400' : 'border-transparent'}`}>
                           <img src={img} alt={`thumbnail ${index}`} className="w-full h-full object-cover" />
                       </button>
                   ))}
               </div>
+            )}
           </div>
 
           <div className="w-full md:w-1/2 p-6 flex flex-col bg-gray-800/50 rounded-lg">

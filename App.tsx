@@ -117,10 +117,10 @@ const App: React.FC = () => {
         ) : (
           <>
             <h1 className="text-5xl md:text-6xl font-extrabold text-center mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-green-500">
-              KICKS
+              Monster Store
             </h1>
             <p className="text-center text-lg text-gray-300 mb-12">
-              Tu estilo, tu historia.
+              Dale estilo a tus Pies!
             </p>
             <HeroCarousel products={bestSellers} onProductSelect={handleProductSelect} />
             <div className="space-y-16">

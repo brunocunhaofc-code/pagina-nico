@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ onAdminClick, isAuthenticated, s
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           <a href="#" className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-green-500">
-            KICKS
+            Monster Store
           </a>
 
           {/* Desktop Nav */}

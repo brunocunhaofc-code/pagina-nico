@@ -1,6 +1,4 @@
-
 import React from 'react';
-import { WhatsAppIcon } from './ui/Icons';
 
 export const Footer = () => {
     const whatsappUrl = `https://wa.me/59800000000?text=${encodeURIComponent("Hola, estoy interesado en sus productos.")}`;
@@ -16,14 +14,12 @@ export const Footer = () => {
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-400 to-teal-500 text-white font-bold rounded-lg shadow-lg hover:scale-105 transform transition-transform duration-300"
                 >
-                    <WhatsAppIcon className="mr-3" />
                     Contactar por WhatsApp
                 </a>
                 <div className="mt-10 pt-8 border-t border-gray-700">
-                    <p>&copy; {new Date().getFullYear()} KICKS. Todos los derechos reservados.</p>
+                    <p>&copy; {new Date().getFullYear()} Monster Store. Todos los derechos reservados.</p>
                 </div>
             </div>
         </footer>
     );
 };
-   

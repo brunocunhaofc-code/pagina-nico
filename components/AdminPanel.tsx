@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { Product } from '../types';
 import { Button } from './ui/Button';
@@ -47,7 +46,7 @@ interface AdminPanelProps {
     setSectionOrder: (newOrder: string[]) => Promise<void>;
     addProduct: (product: Omit<Product, 'id' | 'created_at'>) => Promise<Product | null>;
     updateProduct: (product: Product) => Promise<Product | null>;
-    deleteProduct: (productId: string) => Promise<void>;
+    deleteProduct: (productId: string) => Promise<{ error: Error | null }>;
     updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
 }
 
@@ -81,9 +80,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = (props) => {
         setShowProductForm(true);
     };
     
-    const handleDeleteProduct = async (productId: string) => {
-        if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-            await props.deleteProduct(productId);
+    const handleDeleteProduct = async (product: Product) => {
+        const productId = product.id;
+        const productName = product.name;
+
+        if (!productId) {
+            alert("Error crítico: Este producto no tiene un ID válido y no puede ser eliminado.");
+            return;
+        }
+
+        // Se ha eliminado el window.confirm para asegurar que el evento se dispare.
+        // En una app final, sería bueno volver a añadirlo con un diseño personalizado.
+        const { error } = await props.deleteProduct(productId);
+        if (error) {
+            alert(`No se pudo eliminar el producto "${productName}":\n\n${error.message}`);
         }
     };
 
@@ -116,6 +126,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = (props) => {
         if (window.confirm(`¿Estás seguro de que quieres eliminar la marca "${brandName}"?`)) {
             const { error } = await props.deleteBrand(brandName);
             if (error) {
+                alert(`No se pudo eliminar la marca: ${error.message}`);
                 setBrandError(error.message);
             }
         }
@@ -197,7 +208,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = (props) => {
                                             <th className="p-3">Nombre</th>
                                             <th className="p-3">Marca</th>
                                             <th className="p-3">Precio</th>
-                                            <th className="p-3">Acciones</th>
+                                            <th className="p-3 text-right">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -207,8 +218,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = (props) => {
                                             <td className="p-3">{p.brand}</td>
                                             <td className="p-3">${p.price}</td>
                                             <td className="p-3">
-                                                <button onClick={() => handleEditProductClick(p)} className="p-2 text-blue-400 hover:text-blue-300"><EditIcon /></button>
-                                                <button onClick={() => handleDeleteProduct(p.id!)} className="p-2 text-red-400 hover:text-red-300"><DeleteIcon /></button>
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => handleEditProductClick(p)} className="p-2 text-blue-400 hover:text-blue-300"><EditIcon /></button>
+                                                    <button onClick={() => handleDeleteProduct(p)} className="p-2 text-red-400 hover:text-red-300"><DeleteIcon /></button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

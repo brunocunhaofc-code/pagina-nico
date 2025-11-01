@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Product } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { Input } from './ui/Input';
@@ -28,10 +28,23 @@ const emptyProduct: Omit<Product, 'id' | 'created_at'> = {
 export const ProductForm: React.FC<ProductFormProps> = ({ product, brands, onSave, onCancel, isSaving }) => {
     const [formData, setFormData] = useState(product ? { ...product } : { ...emptyProduct });
     const [isUploading, setIsUploading] = useState(false);
+    
+    const imagesRef = useRef(formData.images);
+    imagesRef.current = formData.images;
 
     useEffect(() => {
         setFormData(product ? { ...product } : { ...emptyProduct });
     }, [product]);
+
+    useEffect(() => {
+        // Cleanup function to revoke object URLs on unmount to prevent memory leaks
+        return () => {
+            const localUrls = (imagesRef.current || []).filter(url => url.startsWith('blob:'));
+            if (localUrls.length > 0) {
+                localUrls.forEach(URL.revokeObjectURL);
+            }
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -47,38 +60,64 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, brands, onSav
         }
     };
 
+    // Fix: Replaced `for...of` loop with a standard `for` loop to iterate over the `FileList`.
+    // This ensures that the `file` variable is correctly typed as `File`, resolving errors
+    // where it was being inferred as `unknown`.
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
         setIsUploading(true);
-        const uploadedImageUrls: string[] = [];
 
-        for (const file of files) {
-            const fileName = `${Date.now()}-${file.name}`;
-            const { data, error } = await supabase.storage
-                .from('product-images')
-                .upload(fileName, file);
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const localUrl = URL.createObjectURL(file);
+            
+            // Add local URL for immediate preview
+            setFormData(prev => ({ ...prev, images: [...prev.images, localUrl] }));
 
-            if (error) {
-                console.error('Error uploading image:', error);
-                continue;
-            }
-            if (data) {
-                const { data: { publicUrl } } = supabase.storage
+            try {
+                const fileName = `${Date.now()}-${file.name}`;
+                const { data, error } = await supabase.storage
                     .from('product-images')
-                    .getPublicUrl(data.path);
-                if (publicUrl) {
-                    uploadedImageUrls.push(publicUrl);
+                    .upload(fileName, file);
+
+                if (error) {
+                    console.error('Error uploading image:', error);
+                    throw error; // throw to catch block
                 }
+                
+                if (data) {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('product-images')
+                        .getPublicUrl(data.path);
+
+                    if (publicUrl) {
+                        // Replace local URL with remote URL
+                        setFormData(prev => ({
+                            ...prev,
+                            images: prev.images.map(img => (img === localUrl ? publicUrl : img))
+                        }));
+                        URL.revokeObjectURL(localUrl);
+                    } else {
+                        throw new Error("Could not get public URL.");
+                    }
+                }
+            } catch (error) {
+                console.error('Upload failed for one image:', error);
+                // On error, remove the local preview
+                setFormData(prev => ({ ...prev, images: prev.images.filter(img => img !== localUrl) }));
+                URL.revokeObjectURL(localUrl);
             }
         }
-
-        setFormData(prev => ({ ...prev, images: [...prev.images, ...uploadedImageUrls] }));
+        
         setIsUploading(false);
     };
 
     const handleImageDelete = (imageUrl: string) => {
+        if (imageUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(imageUrl);
+        }
         setFormData(prev => ({ ...prev, images: prev.images.filter(img => img !== imageUrl) }));
     };
 
@@ -166,7 +205,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, brands, onSav
                     <div className="flex justify-end gap-4 pt-4">
                         <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>Cancelar</Button>
                         <Button type="submit" disabled={isSaving || isUploading}>
-                            {isSaving ? 'Guardando...' : 'Guardar Producto'}
+                            {isSaving ? 'Guardando...' : isUploading ? 'Subiendo...' : 'Guardar Producto'}
                         </Button>
                     </div>
                 </form>
